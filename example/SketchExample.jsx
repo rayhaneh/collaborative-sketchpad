@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import { SketchPad, TOOL_PENCIL, TOOL_LINE, TOOL_RECTANGLE, TOOL_ELLIPSE } from './../src';
-import IO from 'socket.io-client'
 
-const wsClient = IO(`ws://127.0.0.1:12346`);
 
 export default class SketchExample extends Component
 {
@@ -22,7 +20,24 @@ export default class SketchExample extends Component
   }
 
   componentDidMount() {
-    wsClient.on('addItem', item => this.setState({items: this.state.items.concat([item])}));
+    // wsClient.on('addItem', item => this.setState({items: this.state.items.concat([item])}));
+    this.socket = new WebSocket("ws://localhost:3001")
+    console.log('Connected to the server!')
+
+    // Wait for new messages and then add them to the DOM
+    this.socket.onmessage = this.addNewItem;
+    // this.socket.onmessage = (item) => {
+    //   // this.setState({items: this.state.items.concat([item])})
+    //   console.log('in here', item)
+    // }
+  }
+
+
+  // UPDATE THE STATE WITH THE NEW MESSAGES
+  addNewItem = (receivedItem) => {
+    // Parsed the recived messages object
+    console.log(JSON.parse(receivedItem.data))
+    this.setState({items: this.state.items.concat([JSON.parse(receivedItem.data)])})
   }
 
   render() {
@@ -40,7 +55,13 @@ export default class SketchExample extends Component
             fillColor={fill ? fillColor : ''}
             items={items}
             tool={tool}
-            onCompleteItem={(i) => wsClient.emit('addItem', i)}
+            // onCompleteItem={(i) => wsClient.emit('addItem', i)}
+            onCompleteItem={(item) => {
+
+              console.log(item)
+              this.socket.send(JSON.stringify(item))
+            }
+            }
           />
         </div>
         <div style={{float:'left'}}>
